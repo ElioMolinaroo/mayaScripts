@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------------------
 #
-#----------------  Ribbon Automation Script v2.2 by Elio Molinaro  ------------------------
+#----------------  Ribbon Automation Script v3.0 by Elio Molinaro  ------------------------
 #
 #------------------------------------------------------------------------------------------
 
@@ -8,6 +8,13 @@
 
 import maya.cmds as cmds
 import pymel.core as pm
+
+
+def driversCheckboxOn(*args):
+    cmds.checkBox('drivers_checkbox', edit=1, value=1, ed=0)
+
+def driversCheckboxOff(*args):
+    cmds.checkBox('drivers_checkbox', edit=1, value=1, ed=1)
 
 
 # Prepare the ribbon 
@@ -320,41 +327,41 @@ def pointOnSurfaceRibbon():
 
         counter += 1
 
+    if cmds.checkBox('drivers_checkbox', q=1, v=1) == 1:
+        # Create the controller joints by duplicating existing joints
+        driver_joints = []
+        counter = 1
+        for i in range(number_of_controllers):
+            temp_joint = f'jnt_{ribbon_name}_0{counter}'
+            position = cmds.xform(temp_joint, q=1, m=1, ws=1)
 
-    # Create the controller joints by duplicating existing joints
-    driver_joints = []
-    counter = 1
-    for i in range(number_of_controllers):
-        temp_joint = f'jnt_{ribbon_name}_0{counter}'
-        position = cmds.xform(temp_joint, q=1, m=1, ws=1)
+            new_joint = cmds.duplicate(temp_joint)
+            new_joint = new_joint[0]
+            driver_joints.append(new_joint)
 
-        new_joint = cmds.duplicate(temp_joint)
-        new_joint = new_joint[0]
-        driver_joints.append(new_joint)
+            cmds.xform(new_joint, m=position, ws=1)
+            cmds.setAttr(f'{new_joint}.rotateX', 0)
+            cmds.setAttr(f'{new_joint}.rotateY', 0)
+            cmds.setAttr(f'{new_joint}.rotateZ', 0)
 
-        cmds.xform(new_joint, m=position, ws=1)
-        cmds.setAttr(f'{new_joint}.rotateX', 0)
-        cmds.setAttr(f'{new_joint}.rotateY', 0)
-        cmds.setAttr(f'{new_joint}.rotateZ', 0)
+            counter = counter + 4
 
-        counter = counter + 4
+        cmds.parent(driver_joints, world=True)
 
-    cmds.parent(driver_joints, world=True)
+        counter = 1
+        for i in driver_joints:
+            cmds.setAttr(i + '.radius', .5)
+            cmds.rename(i, f'sk_{ribbon_name}_control_0{counter}')
+            counter += 1
 
-    counter = 1
-    for i in driver_joints:
-        cmds.setAttr(i + '.radius', .5)
-        cmds.rename(i, f'sk_{ribbon_name}_control_0{counter}')
-        counter += 1
+        driver_joints = []
+        for i in range(number_of_controllers):
+            driver_joints.append(f'sk_{ribbon_name}_control_0{i+1}')
 
-    driver_joints = []
-    for i in range(number_of_controllers):
-        driver_joints.append(f'sk_{ribbon_name}_control_0{i+1}')
-
-    if cmds.objExists('grp_JNTS') is True:
-        cmds.parent(driver_joints, 'grp_JNTS')
-    else:
-        cmds.group(driver_joints, name='grp_JNTS')
+        if cmds.objExists('grp_JNTS') is True:
+            cmds.parent(driver_joints, 'grp_JNTS')
+        else:
+            cmds.group(driver_joints, name='grp_JNTS')
 
 
     if cmds.checkBox('ctrl_checkbox', q=1, v=1) == 1:
@@ -385,13 +392,11 @@ def pointOnSurfaceRibbon():
         for i in driver_joints:
             matrixConstraint(i, controllers_list[counter])
             counter += 1
-    else:
-        pass
 
-
-    # Bind driver joints to NURB Surface
-    driver_joints.append(user_sel)
-    cmds.skinCluster(driver_joints, bm=0, mi=5)
+    if cmds.checkBox('drivers_checkbox', q=1, v=1) == 1:
+        # Bind driver joints to NURB Surface
+        driver_joints.append(user_sel)
+        cmds.skinCluster(driver_joints, bm=0, mi=5)
 
     # Rename NURB Surface
     cmds.rename(user_sel, f'nurb_{ribbon_name}')
@@ -414,7 +419,7 @@ def ribbonAutomationUI():
         cmds.deleteUI('ribbonAutomationUI')
 
     # Create window
-    window = cmds.window('ribbonAutomationUI', title='Ribbon Builder v2.2', w=220, h=260,
+    window = cmds.window('ribbonAutomationUI', title='Ribbon Builder v3.0', w=220, h=260,
                          mnb=False, mxb=False, sizeable=False)
 
     # Create main Layout
@@ -440,7 +445,10 @@ def ribbonAutomationUI():
     cmds.menuItem(label='Follicles')
 
     # Create controllers checkbox
-    ctrl_checkbox = cmds.checkBox('ctrl_checkbox', label='Controllers', value=1)
+    ctrl_checkbox = cmds.checkBox('ctrl_checkbox', label='Controllers', value=1, onCommand=driversCheckboxOn, offCommand=driversCheckboxOff)
+
+    # Create driver joints checkbox
+    drivers_checkbox = cmds.checkBox('drivers_checkbox', label='Driver Joints', value=1, ed=0)
 
     # Create button
     button = cmds.button(label='CREATE', ann='Create The Ribbon', command=runScript)
@@ -467,7 +475,7 @@ def ribbonAutomationUI():
 
                                   (type_menu, 'left', 7),
 
-                                  (ctrl_checkbox, 'left', 60),
+                                  (ctrl_checkbox, 'left', 25), (drivers_checkbox, 'left', 115),
 
                                   (button, 'left', 5), (button, 'right', 5), (button, 'bottom', 5)
                     ],
@@ -487,6 +495,8 @@ def ribbonAutomationUI():
                                      (type_menu, 'top', 15, separator_02),
 
                                      (ctrl_checkbox, 'top', 10, type_menu),
+
+                                     (drivers_checkbox, 'top', 10, type_menu),
 
                                      (button, 'top', 12, ctrl_checkbox)
                     ]
