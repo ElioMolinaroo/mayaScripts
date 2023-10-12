@@ -45,7 +45,7 @@ def ribbonPrep(x):
 
         cmds.setAttr(f'{make}.patches{main_side}', number_of_spans)
 
-        cmds.makeIdentity(user_sel, s=1, a=1)
+        cmds.makeIdentity(user_sel, a=1)
         cmds.delete(user_sel, ch=1)
 
 
@@ -284,27 +284,18 @@ def pointOnSurfaceRibbon():
         decomp = cmds.createNode('decomposeMatrix', n=f'{ribbon_name}_pos_dcm')
 
         cmds.connectAttr(f'{shape}.worldSpace[0]', f'{p_o_s}.inputSurface')
-        cmds.connectAttr(f'{p_o_s}.result.position.positionX', f'{four_by_four}.in30')
-        cmds.connectAttr(f'{p_o_s}.result.position.positionY', f'{four_by_four}.in31')
-        cmds.connectAttr(f'{p_o_s}.result.position.positionZ', f'{four_by_four}.in32')
+        cmds.connectAttr(f'{p_o_s}.result.normalizedTangentU.normalizedTangentUX', f'{four_by_four}.in00')
+        cmds.connectAttr(f'{p_o_s}.result.normalizedTangentU.normalizedTangentUY', f'{four_by_four}.in01')
+        cmds.connectAttr(f'{p_o_s}.result.normalizedTangentU.normalizedTangentUZ', f'{four_by_four}.in02')
+        cmds.connectAttr(f'{p_o_s}.result.normalizedTangentV.normalizedTangentVX', f'{four_by_four}.in10')
+        cmds.connectAttr(f'{p_o_s}.result.normalizedTangentV.normalizedTangentVY', f'{four_by_four}.in11')
+        cmds.connectAttr(f'{p_o_s}.result.normalizedTangentV.normalizedTangentVZ', f'{four_by_four}.in12')
         cmds.connectAttr(f'{p_o_s}.result.normalizedNormal.normalizedNormalX', f'{four_by_four}.in20')
         cmds.connectAttr(f'{p_o_s}.result.normalizedNormal.normalizedNormalY', f'{four_by_four}.in21')
         cmds.connectAttr(f'{p_o_s}.result.normalizedNormal.normalizedNormalZ', f'{four_by_four}.in22')
-
-        if main_side == 'V':
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentU.normalizedTangentUX', f'{four_by_four}.in10')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentU.normalizedTangentUY', f'{four_by_four}.in11')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentU.normalizedTangentUZ', f'{four_by_four}.in12')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentV.normalizedTangentVX', f'{four_by_four}.in00')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentV.normalizedTangentVY', f'{four_by_four}.in01')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentV.normalizedTangentVZ', f'{four_by_four}.in02')
-        elif main_side == 'U':
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentU.normalizedTangentUX', f'{four_by_four}.in00')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentU.normalizedTangentUY', f'{four_by_four}.in01')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentU.normalizedTangentUZ', f'{four_by_four}.in02')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentV.normalizedTangentVX', f'{four_by_four}.in10')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentV.normalizedTangentVY', f'{four_by_four}.in11')
-            cmds.connectAttr(f'{p_o_s}.result.normalizedTangentV.normalizedTangentVZ', f'{four_by_four}.in12')
+        cmds.connectAttr(f'{p_o_s}.result.position.positionX', f'{four_by_four}.in30')
+        cmds.connectAttr(f'{p_o_s}.result.position.positionY', f'{four_by_four}.in31')
+        cmds.connectAttr(f'{p_o_s}.result.position.positionZ', f'{four_by_four}.in32')
 
         cmds.connectAttr(f'{four_by_four}.output', f'{mult}.matrixIn[0]')
         cmds.connectAttr(f'{i}.parentInverseMatrix', f'{mult}.matrixIn[1]')
@@ -323,6 +314,9 @@ def pointOnSurfaceRibbon():
         if main_side == 'U':
             cmds.setAttr(f'{p_o_s}.parameterV', 0.5)
             cmds.setAttr(f'{p_o_s}.parameterU', increment*counter)
+
+        # Add the counter joint orientation
+        cmds.setAttr(f'{joints_list[counter]}.jointOrientX', 90)
 
         counter += 1
 
