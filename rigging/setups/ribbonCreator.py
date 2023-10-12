@@ -6,15 +6,34 @@
 
 """Creates Ribbons for you"""
 
+from math import floor
 import maya.cmds as cmds
 import pymel.core as pm
 
 
+# UI state change functions
 def driversCheckboxOn(*args):
     cmds.checkBox('drivers_checkbox', edit=1, value=1, ed=0)
-
 def driversCheckboxOff(*args):
     cmds.checkBox('drivers_checkbox', edit=1, value=1, ed=1)
+def numJointsOn(*args):
+    cmds.textField('jnts_text_field', edit=1, ed=1)
+    cmds.text('num_jnts_text', edit=1, en=1)
+def numJointsOff(*args):
+    cmds.textField('jnts_text_field', edit=1, ed=0)
+    cmds.textField('jnts_text_field', edit=1, tx='')
+    cmds.text('num_jnts_text', edit=1, en=0)
+def ctrlsTextChanged(*args):
+    num_ctrls = cmds.textField('ctrls_text_field', query=1, tx=1)
+    if num_ctrls.isdigit() is False:
+        cmds.textField('ctrls_text_field', edit=1, pht='5')
+    else:
+        num_joints_var = num_joints(int(num_ctrls))
+        cmds.textField('jnts_text_field', edit=1, pht=num_joints_var)
+
+    jnts_ctrls = cmds.textField('jnts_text_field', query=1, tx=1)
+    if jnts_ctrls > num_ctrls:
+        cmds.textField('ctrls_text_field', edit=1, tx=jnts_ctrls)
 
 
 # Prepare the ribbon 
@@ -62,6 +81,7 @@ def num_joints(x):
     global number_of_joints
 
     number_of_joints = 4 * (x-1) + 1
+    return number_of_joints
 
 
 # Define the NURBS selection function
@@ -251,7 +271,12 @@ def pointOnSurfaceRibbon():
     else:
         number_of_controllers = int(cmds.textField('ctrls_text_field', query=True, text=True))
 
-    num_joints(number_of_controllers)
+    if len(cmds.textField('jnts_text_field', query=True, text=True)) == 0:
+        num_joints(number_of_controllers)
+    else:
+        global number_of_joints
+        number_of_joints = int(cmds.textField('jnts_text_field', query=True, text=True))
+
     selNurb()
     ribbonPrep(0)
 
@@ -342,7 +367,7 @@ def pointOnSurfaceRibbon():
             cmds.setAttr(f'{new_joint}.rotateY', 0)
             cmds.setAttr(f'{new_joint}.rotateZ', 0)
 
-            counter = counter + 4
+            counter = counter + floor(number_of_joints/number_of_controllers) + 1
 
         cmds.parent(driver_joints, world=True)
 
@@ -417,7 +442,7 @@ def ribbonAutomationUI():
         cmds.deleteUI('ribbonAutomationUI')
 
     # Create window
-    window = cmds.window('ribbonAutomationUI', title='Ribbon Builder v3.0', w=220, h=260,
+    window = cmds.window('ribbonAutomationUI', title='Ribbon Builder v3.0', w=220, h=280,
                          mnb=False, mxb=False, sizeable=False)
 
     # Create main Layout
@@ -431,7 +456,10 @@ def ribbonAutomationUI():
     separator_02 = cmds.separator(h=5, style='shelf')
 
     # Create number of controllers writing field
-    ctrls_text_field = cmds.textField('ctrls_text_field', pht = '5', w=75)
+    ctrls_text_field = cmds.textField('ctrls_text_field', pht = '5', w=75, changeCommand=ctrlsTextChanged)
+
+    # Create number of joints writing field
+    jnts_text_field = cmds.textField('jnts_text_field', pht = '17', w=75, ed=0)
 
     # Create ribbon name writing field
     name_text_field = cmds.textField('name_text_field', pht = 'temp_ribbon', w=110)
@@ -441,6 +469,9 @@ def ribbonAutomationUI():
                                 ann='What type of ribbon do you want to create?')
     cmds.menuItem(label='Point On Surface')
     cmds.menuItem(label='Follicles')
+
+    # Create number of joints checkbox
+    num_joints_checkbox = cmds.checkBox('num_joints_checkbox', label='', value=0, ed=1, onCommand=numJointsOn, offCommand=numJointsOff)
 
     # Create controllers checkbox
     ctrl_checkbox = cmds.checkBox('ctrl_checkbox', label='Controllers', value=1, onCommand=driversCheckboxOn, offCommand=driversCheckboxOff)
@@ -453,6 +484,7 @@ def ribbonAutomationUI():
 
     # Create Missing Titles
     ctrls_title = cmds.text(label='Number of Controllers', ann='number of spans/2 + 1')
+    jnts_title = cmds.text('num_jnts_text', label='Number of Joints', en=0, ann='(number of controllers - 1) * 4 + 1')
     name_title = cmds.text(label='Ribbon Name')
 
     # Adjust layout
@@ -465,9 +497,15 @@ def ribbonAutomationUI():
 
                                   (ctrls_text_field, 'left', 128),
 
+                                  (jnts_text_field, 'left', 128),
+
                                   (name_text_field, 'left', 92),
 
                                   (ctrls_title, 'left', 5),
+
+                                  (jnts_title, 'left', 30),
+
+                                  (num_joints_checkbox, 'left', 5),
 
                                   (name_title, 'left', 10),
 
@@ -484,9 +522,15 @@ def ribbonAutomationUI():
 
                                      (ctrls_title, 'top', 15, separator_01),
 
-                                     (name_text_field, 'top', 10, ctrls_text_field),
+                                     (jnts_text_field, 'top', 10, ctrls_text_field),
 
-                                     (name_title, 'top', 10, ctrls_text_field),
+                                     (jnts_title, 'top', 10, ctrls_text_field),
+
+                                     (num_joints_checkbox, 'top', 10, ctrls_text_field),
+
+                                     (name_text_field, 'top', 10, jnts_text_field),
+
+                                     (name_title, 'top', 10, jnts_text_field),
 
                                      (separator_02, 'top', 15, name_text_field),
 
