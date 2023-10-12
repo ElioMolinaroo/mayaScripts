@@ -10,7 +10,7 @@ import maya.cmds as cmds
 import pymel.core as pm
 
 
-# Prepare the ribbon
+# Prepare the ribbon 
 def ribbonPrep(x):
 
     global main_side
@@ -251,14 +251,18 @@ def pointOnSurfaceRibbon():
     ribbonPrep(0)
 
     # Create joints and parent them
-    joint_list = []
+    joints_list = []
+    groups_list = []
     driven_group = cmds.group(n=f'grp_{ribbon_name}_joints', empty=1)
     cmds.select(d=1)
 
     for i in range(number_of_joints):
         temp_joint = cmds.joint(radius=0.2, n=f'jnt_{ribbon_name}_0{i+1}')
-        joint_list.append(temp_joint)
-        cmds.parent(temp_joint, driven_group)
+        joints_list.append(temp_joint)
+        cmds.select(d=1)
+        offset_joint_grp = cmds.group(n=f'offset_jnt_{ribbon_name}_0{i+1}', p=driven_group, empty=1)
+        cmds.parent(temp_joint, offset_joint_grp)
+        groups_list.append(offset_joint_grp)
         cmds.select(d=1)
 
     if cmds.objExists('grp_JNTS') is True:
@@ -272,7 +276,7 @@ def pointOnSurfaceRibbon():
     shape = cmds.listRelatives(user_sel)[0]
 
     counter = 0
-    for i in joint_list:
+    for i in groups_list:
 
         p_o_s = cmds.createNode('pointOnSurfaceInfo', n=f'{ribbon_name}_pos')
         four_by_four = cmds.createNode('fourByFourMatrix', n=f'{ribbon_name}_pos_ffm')
