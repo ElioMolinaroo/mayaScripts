@@ -169,31 +169,31 @@ def folliclesRibbon():
         temp_joint = temp_joint[0]
         joint_list.append(temp_joint)
 
+    if cmds.checkBox('drivers_checkbox', q=1, v=1) == 1:
+        # Create the controller joints by duplicating existing joints
+        controller_joints = []
+        counter = 1
+        for i in range(number_of_controllers):
+            controller_joints.append(f'sk_joint_{ribbon_name}_0{counter}')
+            counter = counter + 4
 
-    # Create the controller joints by duplicating existing joints
-    controller_joints = []
-    counter = 1
-    for i in range(number_of_controllers):
-        controller_joints.append(f'sk_joint_{ribbon_name}_0{counter}')
-        counter = counter + 4
+        driver_joints = cmds.duplicate(controller_joints)
+        cmds.parent(driver_joints, world=True)
 
-    driver_joints = cmds.duplicate(controller_joints)
-    cmds.parent(driver_joints, world=True)
+        counter = 1
+        for i in driver_joints:
+            cmds.setAttr(i + '.radius', .5)
+            cmds.rename(i, f'sk_{ribbon_name}_control_0{counter}')
+            counter += 1
 
-    counter = 1
-    for i in driver_joints:
-        cmds.setAttr(i + '.radius', .5)
-        cmds.rename(i, f'sk_{ribbon_name}_control_0{counter}')
-        counter += 1
+        driver_joints = []
+        for i in range(number_of_controllers):
+            driver_joints.append(f'sk_{ribbon_name}_control_0{i+1}')
 
-    driver_joints = []
-    for i in range(number_of_controllers):
-        driver_joints.append(f'sk_{ribbon_name}_control_0{i+1}')
-
-    if cmds.objExists('grp_JNTS') is True:
-        cmds.parent(driver_joints, 'grp_JNTS')
-    else:
-        cmds.group(driver_joints, name='grp_JNTS')
+        if cmds.objExists('grp_JNTS') is True:
+            cmds.parent(driver_joints, 'grp_JNTS')
+        else:
+            cmds.group(driver_joints, name='grp_JNTS')
 
     if cmds.checkBox('ctrl_checkbox', q=1, v=1) == 1:
         # Create controllers and match them to their joint
@@ -223,13 +223,11 @@ def folliclesRibbon():
         for i in driver_joints:
             matrixConstraint(i, controllers_list[counter])
             counter += 1
-    else:
-        pass
 
-
-    # Bind driver joints to NURB Surface
-    driver_joints.append(user_sel)
-    cmds.skinCluster(driver_joints, bm=0, mi=5)
+    if cmds.checkBox('drivers_checkbox', q=1, v=1) == 1:
+        # Bind driver joints to NURB Surface
+        driver_joints.append(user_sel)
+        cmds.skinCluster(driver_joints, bm=0, mi=5)
 
     # Rename NURB Surface
     cmds.rename(user_sel, f'nurb_{ribbon_name}')
