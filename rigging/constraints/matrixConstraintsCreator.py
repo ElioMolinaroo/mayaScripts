@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------------------
 #
-#-------------  Matrix Constraint Automation Script v2.6 by Elio Molinaro  ----------------
+#-------------  Matrix Constraint Automation Script v2.7 by Elio Molinaro  ----------------
 #
 #------------------------------------------------------------------------------------------
 
@@ -91,13 +91,13 @@ def matrixConstraint(*args):
     else:
         pass
 
-    # Check if child object(s) has a parent + stores that parent into a variable
+    '''# Check if child object(s) has a parent + stores that parent into a variable
     if cmds.listRelatives(child, p=True) is None:
         cmds.delete(created_objects)
         cmds.error(f"Child object '{child}' needs to have a parent")
     else:
         child_parent = cmds.listRelatives(child, p=True)
-        child_parent = child_parent[0]
+        child_parent = child_parent[0]'''
 
     # Check if child is a joint
     if cmds.nodeType(child) == 'joint':
@@ -139,12 +139,12 @@ def matrixConstraint(*args):
             cmds.disconnectAttr(f'{mult_matrix_maintain}.matrixSum', f'{parent}.proxyAttr')
             cmds.connectAttr(f'{parent}.proxyAttr', f'{mult_matrix}.matrixIn[0]')
             cmds.connectAttr(f'{parent}.worldMatrix[0]', f'{mult_matrix}.matrixIn[1]')
-            cmds.connectAttr(f'{child_parent}.worldInverseMatrix[0]', f'{mult_matrix}.matrixIn[2]')
+            cmds.connectAttr(f'{child}.parentInverseMatrix[0]', f'{mult_matrix}.matrixIn[2]')
             cmds.connectAttr(f'{mult_matrix}.matrixSum', f'{decompose_matrix}.inputMatrix')
             cmds.delete(mult_matrix_maintain)
         elif maintain_offset is False:
             cmds.connectAttr(f'{parent}.worldMatrix[0]', f'{mult_matrix}.matrixIn[0]')
-            cmds.connectAttr(f'{child_parent}.worldInverseMatrix[0]', f'{mult_matrix}.matrixIn[1]')
+            cmds.connectAttr(f'{child}.parentInverseMatrix[0]', f'{mult_matrix}.matrixIn[1]')
             cmds.connectAttr(f'{mult_matrix}.matrixSum', f'{decompose_matrix}.inputMatrix')
 
         if constraint_type == 'parent':
@@ -183,7 +183,7 @@ def matrixConstraint(*args):
             current_parent = parents_list[i]
 
             cmds.connectAttr(f'{current_parent}.worldMatrix[0]', f'{mult_matrix}.matrixIn[0]')
-            cmds.connectAttr(f'{child_parent}.worldInverseMatrix[0]', f'{mult_matrix}.matrixIn[1]')
+            cmds.connectAttr(f'{child}.parentInverseMatrix[0]', f'{mult_matrix}.matrixIn[1]')
 
         cmds.connectAttr(f'{child}_mm_1.matrixSum', f'{blend_matrix}.inputMatrix')
 
@@ -312,7 +312,7 @@ def matrixConstraintUI():
         cmds.deleteUI('matrixConstraintUI')
 
     # Create window
-    window = cmds.window('matrixConstraintUI', title='Matrix Constraint Tool v2.6', w=240, h=330,
+    window = cmds.window('matrixConstraintUI', title='Matrix Constraint Tool v2.7', w=240, h=330,
                          mnb=False, mxb=False, sizeable=False)
 
     # Create main Layout
